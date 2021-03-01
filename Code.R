@@ -6,7 +6,7 @@ library(ggplot2)
 library(ggthemes)
 
 #Loading data into R
-pd <- read.csv("Quick Start/R/Project 2/Materials/Project2Data.csv")
+pd <- read.csv("Project2Data.csv")
 
 #Creation of factor showing all unique user IDs
 uniqueusers <- unique(pd$userid)
@@ -38,10 +38,11 @@ names(final)[7] <- "event2"
 names(final)[8] <- "timeout"
 names(final)[9] <- "event3"
 
+
 #Taking necessary columns from 'final' data frame and adding them to created 'q3' data frame
 q3 <- data.frame(final$maxsessionuid,final$userid,final$type,
-                 as_datetime(final$login),as_datetime(final$logout),
-                 as_datetime(final$timeout))
+                 mdy_hm(final$login),mdy_hm(final$logout),
+                 mdy_hm(final$timeout))
 
 #Renaming columns in 'q3' data frame created above 
 names(q3)[1] <- "maxsessionuid"

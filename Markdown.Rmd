@@ -1,0 +1,122 @@
+---
+title: "Data Wrangling and Graphing in R"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!require(ggplot2)){install.packages('ggplot2')}
+if(!require(lubridate)){install.packages('lubridate')}
+if(!require(ggthemes)){install.packages('ggthemes')}
+library(lubridate)
+library(ggplot2)
+library(ggthemes)
+```
+
+## Part One
+
+The first part of our project revolves around doing some data wrangling.  The first objective is to simply find how many unique users are included in our dataset.  Before looking into this, however, we need to grab the data and display the top 6 rows to see how it looks.
+
+```{r}
+#Loading data into R
+pd <- read.csv("Project2Data.csv")
+
+head(pd)
+```
+
+To find how many unique users are featured in this data we will simply use the unique() function in base R.
+
+```{r}
+  #Creation of factor showing all unique user IDs
+  uniqueusers <- unique(pd$userid)
+
+  #Show's amount of unique user IDs
+  length(uniqueusers)
+```
+
+Next we need to see how many unique users are within each unique user type.
+
+```{r}
+  #Subsets data from pd where user ID is unique
+  pd_deduced <- pd[!duplicated(pd[c("userid")]),]
+
+  #Shows how many entries from pd_deduced are in each type of account
+  table(pd_deduced$type)
+```
+
+Finally the third section of part one.  Here we need to determine the average session length for each unique user type.  To do this we will make a new data frame (q3) that is going to show each unique session and display the user associated with it, their classification, the time the logged in and the time their session ended. 
+
+```{r}
+  #Subsets data from pd where attempt result is login, timeout or logout into their own data frames
+  login <- pd[pd$attemptresult=="LOGIN",]
+  logout <- pd[pd$attemptresult=="LOGOUT",]
+  timeout <- pd[pd$attemptresult=="TIMEOUT",]
+
+  #Merges subsetted data from above data frames together
+  one <- merge(login,logout,by=c("maxsessionuid","userid","type"),all.x=TRUE)
+  final <- merge(one,timeout,by=c("maxsessionuid","userid","type"),all.x=TRUE)
+
+  #Renaming columns in 'final' data frame created above
+  names(final)[4] <- "login"
+  names(final)[5] <- "event1"
+  names(final)[6] <- "logout"
+  names(final)[7] <- "event2"
+  names(final)[8] <- "timeout"
+  names(final)[9] <- "event3"
+
+  #Taking necessary columns from 'final' data frame and adding them to created 'q3' data frame
+q3 <- data.frame(final$maxsessionuid,final$userid,final$type,
+                 mdy_hm(final$login),mdy_hm(final$logout),
+                 mdy_hm(final$timeout))
+
+  #Renaming columns in 'q3' data frame created above 
+  names(q3)[1] <- "maxsessionuid"
+  names(q3)[2] <- "userid"
+  names(q3)[3] <- "type"
+  names(q3)[4] <- "login"
+  names(q3)[5] <- "logout"
+  names(q3)[6] <- "timeout"
+  
+  head(q3)
+```
+
+Next we will find the time each session ended and put it back in the q3 data frame in a new column we'll call 'max'.  Then we will create another column in that data frame showing the length of each session and call it 'diff'.
+
+```{r}
+#Finds max time from time fields in q3 and adds them to q3 in new column 'max'
+  x <- data.frame(as.numeric(as.POSIXct(q3$login)),as.numeric(as.POSIXct(q3$logout)),
+                as.numeric(as.POSIXct(q3$timeout)))
+  x[is.na(x)] <- 0
+  q3$max <- as_datetime(apply(x,1,max))
+
+  #Creates new column in q3 named 'diff' showing length of each session
+  q3$diff <- difftime(q3$max,q3$login,units="hours")
+```
+
+To finish out part one we will create three new data frames and vectors for each unique user type.  We will use the data frames to find the average difference for each type and then paste the results into the type's respective vector. This information will go into a new data frame (q3final) which will contain our final result.
+
+```{r}
+  #Subsets data from q3 by type of user access
+  q3auth <- q3[q3$type=="AUTHORIZED",]
+  q3lim <- q3[q3$type=="LIMITED",]
+  q3exp <- q3[q3$type=="EXPRESS",]
+
+  #Finds average length of session for each type of user access
+  a <- c(mean(q3auth$diff))
+  b <- c(mean(q3lim$diff))
+  c <- c(mean(q3exp$diff))
+
+  #Assigns average for each user type to a vector
+  AUTHORIZED <- c(paste(floor(a),round((a-floor(a))*60),sep=":"))
+  LIMITED <- c(paste(floor(b),round((b-floor(b))*60),sep=":"))
+  EXPRESS <- c(paste(floor(c),round((c-floor(c))*60),sep=":"))
+
+  #Adds vectors created above to data frame showing average length of session for each user ID
+  q3final <- data.frame(AUTHORIZED,LIMITED,EXPRESS)
+
+  #Renames row in 'q3final' data frame
+  row.names(q3final) <- "Average Length of Session"
+
+  #Displays 'q3final' data frame
+  q3final
+```
