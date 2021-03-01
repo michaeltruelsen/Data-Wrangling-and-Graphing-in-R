@@ -120,3 +120,90 @@ To finish out part one we will create three new data frames and vectors for each
   #Displays 'q3final' data frame
   q3final
 ```
+
+## Part Two
+
+In part two of this project we will work on ways to display the data in useful ways.  The assignment requests that we create a Gantt chart showing blocks of time representing when each user logged in, mapped on the time field, colored by which user type they belong to.
+
+First we will go ahead and create the Gantt chart as best we can.
+
+In order to do that we need to split our data into smaller, more manageable data frames.  We will order out 'q3' data frame from the last part by login and then split that data into smaller parts.  Order those parts by user ID, and then make new data frames taking only the columns necessary for our Gantt chart.  Then we will split one of those data frames into a much smaller data frame for use in our Gantt chart.
+
+```{r}
+  #Subsets data from 'q3' data frame ordering data by login time
+  q32 <- q3[order(login),]
+
+  #Breaks out data from each week into it's own data frame
+  p1 <- q32[1:6488,]
+  p2 <- q32[6489:12112,]
+  p3 <- q32[12113:18062,]
+  p4 <- q32[18063:26459,]
+
+  #Orders data from data frames created above by user ID
+  p1a <- p1[order(p1$userid),]
+  p2a <- p1[order(p2$userid),]
+  p3a <- p1[order(p3$userid),]
+  p4a <- p1[order(p4$userid),]
+
+  #Takes necessary columns from data frames created above and adds them to a new data frame
+  p1b <- data.frame(p1a$userid,p1a$type,p1a$maxsessionuid,p1a$login,p1a$max)
+  p2b <- data.frame(p2a$userid,p2a$type,p2a$maxsessionuid,p2a$login,p2a$max)
+  p3b <- data.frame(p3a$userid,p3a$type,p3a$maxsessionuid,p3a$login,p3a$max)
+  p4b <- data.frame(p4a$userid,p4a$type,p4a$maxsessionuid,p4a$login,p4a$max)
+
+  #Subsets data from 'p1b' data frame created above into manageable group of user IDs
+  p1ba <- p1b[1:336,]
+```
+
+Now, we will create our Gantt chart!
+
+```{r}
+  #Creates Gantt chart for group of user IDs in 'p1ba' data frame showing session time and length
+  ggplot(p1ba,aes(x=p1a.login,xend=p1a.max,y=p1a.userid,yend=p1a.userid,color=p1a.type)) +
+    geom_segment(size=3) +
+    labs(title="Week 1, Agent Group 1",x="Session Time/Length",y="User ID",color="Type") +
+    theme_fivethirtyeight() +
+    theme(axis.title=element_text())
+```
+
+As we analyze this chart we can see that using this format to express the amount of concurrent users for the month is not feasible with the amount of users expressed in our data.  
+
+The representation we will use to best present the amount of concurrent users for the month will be a time series chart. First to do that we will make a vector that will express every minute in the month.  Next we will create a logical factor that will count the amount of users logged in at any given minute.
+
+Our next step will be to put that all together on a data frame showing the each minute and the amount of users logged into it, separated by type.  Then we will create a new column in that data frame totaling the count of users in each user type. 
+
+```{r}
+  #Creates factor showing every minute of activity in March
+  interval <- seq(min(q3$login),max(q3$max),by="mins")
+
+  #Creates logical factor showing how many users from each group were logged in each minute
+  x_auth <- sapply(interval,function(int) sum(q3auth$login <= int & int <= q3auth$max))
+  x_lim <- sapply(interval,function(int) sum(q3lim$login <= int & int <= q3lim$max))
+  x_exp <- sapply(interval,function(int) sum(q3exp$login <= int & int <= q3exp$max))
+
+  #Creates data frame from the above factors
+  finalfinal <- data.frame(interval,x_auth,x_lim,x_exp)
+
+  #Adds column to data frame adding together how many users from each group were logged in each minute
+  finalfinal$total <- finalfinal$x_auth+finalfinal$x_lim+finalfinal$x_exp
+  
+  head(finalfinal)
+```
+
+The only thing left to do is put it all together!
+
+```{r}
+  #Creates time series chart showing the number of concurrent users per minute
+  ggplot(finalfinal) +
+    geom_line(aes(x=interval,y=x_auth,color='AUTHORIZED')) +
+    geom_line(aes(x=interval,y=x_exp,color='EXPRESS')) +
+    geom_line(aes(x=interval,y=x_lim,color='LIMITED')) +
+    geom_line(aes(x=interval,y=total,color='TOTAL')) +
+    labs(title="Amount of Concurrent Users",x="Time",y="Number of Users",color='User Type') +
+    scale_y_continuous(limits=c(0,100),breaks=seq(0,100,10),expand=c(0,0)) +
+    theme_fivethirtyeight() +
+    theme(axis.title=element_text())
+```
+
+Now we can see clearly that most users log in during business hours and more users were active in the beginning of the month.  We can also see that the majority of active users are under the AUTHORIZED user type and the minority of users are under the EXPRESS user type.
+
