@@ -20,7 +20,7 @@ The first part of this project includes demonstrating abilities with basic funct
 
 Part two of the project gives the objective of creating a Gantt chart that shows blocks of time representing when each user logged in, mapped on the time field.  Calling also for the blocks representing each user to the colored by which user type they belong to.  In the process of making this happen I realized that there were far too many unique users to make this kind of a Gantt chart a feasible form of presentation.  While I did include a Gantt chart of this sort using a small sample of data, I also opted to present a better way to display this data.  That way being a time series chart showing the number of concurrent users per minute.
 
-In the R-Markdown file located at  I will breakdown these questions more and describe how I went from the raw data to the answers to each question.
+In the R-Markdown file located at https://michaeltruelsen.github.io/Data-Wrangling-and-Graphing-in-R/ I will breakdown these questions more and describe how I went from the raw data to the answers to each question.
 
 
 
