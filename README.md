@@ -22,6 +22,18 @@ Part two of the project gives the objective of creating a Gantt chart that shows
 
 In the R-Markdown file located at https://michaeltruelsen.github.io/Data-Wrangling-and-Graphing-in-R/ I will breakdown these questions more and describe how I went from the raw data to the answers to each question.
 
+The project files and their purpose are as follows:
+
+Code.R is the R script containing all of the code used in this project.
+
+Markdown.Rmd is the R-Markdown file that when knitted resulted in Markdown.html as well as the index file which is seen in the link above.
+
+Project2Data.csv is the raw data that this project uses.
+
+### Bibliography
+
+This data was supplied to me by my instructor in my QuickStart data science bootcamp through Northeastern Illinois University.
+
 
 
 
